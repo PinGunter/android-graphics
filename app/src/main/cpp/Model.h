@@ -61,4 +61,8 @@ private:
 
 };
 
+
+struct Quad {
+    GLuint VAO{0}, VBO{0}, EBO{0};
+};
 #endif //ANDROIDGLINVESTIGATIONS_MODEL_H

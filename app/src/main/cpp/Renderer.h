@@ -52,13 +52,13 @@ private:
      */
     void updateRenderArea();
 
-    /*!
-     * Creates the models for this sample. You'd likely load a scene configuration from a file or
-     * use some other setup logic in your full game.
-     */
-    void createModels(int rx, int ry, float r);
+    void createRenderingQuad();
+
+    void createSphere(int rx, int ry, float r);
 
     void orbitCamera(float dx, float dy);
+
+    std::string loadFile(const std::string &file);
 
     android_app *app_;
     EGLDisplay display_;
@@ -70,22 +70,28 @@ private:
     glm::mat4 projectionMatrix_{1.0f};
 
     // camera params
-    glm::vec3 eye_{0.f, 1.f, 3.f};
+    glm::vec3 eye_{0.f, 10.f, 15.f};
     glm::vec3 center_{0.f};
     glm::vec3 up_{0.f, 1.f, 0.f};
 
 
     // locations
-    GLint viewProjMatLocation_;
-    GLint modelMatLocation_;
-    GLint colorLocation_;
+    GLint u_resolutionL_;
+    GLint u_timeL_;
+    GLint u_cameraPosL_;
+    GLint u_cameraLookAtL_;
 
     std::unique_ptr<Shader> shader_;
     std::vector<Model> models_;
+    Quad quad_;
 
     //input and delta
     glm::vec2 lastPos_{0.f, 0.f};
-    glm::vec2 delta_{0.f, 0.f};
+    glm::vec2 mouseDelta_{0.f, 0.f};
+
+    // timers
+    std::chrono::time_point<std::chrono::high_resolution_clock> startT_;
+
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_RENDERER_H

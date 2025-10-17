@@ -35,71 +35,6 @@ for (auto& extension: extensionList) {\
 aout << std::endl;\
 }
 
-// Vertex shader, you'd typically load this from assets
-static const char *vertex = R"vertex(#version 320 es
-
-// Input vertex attributes
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec2 aUV;
-
-// Uniforms
-uniform mat4 viewProjMat;
-uniform mat4 modelMat;
-
-// Output to fragment shader
-out vec3 vNormal;
-out vec2 vUV;
-out vec3 vWorldPos;
-
-void main() {
-    // Transform position to clip space
-    vec4 worldPos = modelMat * vec4(aPosition, 1.0);
-    gl_Position = viewProjMat * worldPos;
-
-    // Transform normal to world space (for proper lighting in the future)
-    vNormal = mat3(modelMat) * aNormal;
-
-    // Pass through UV
-    vUV = aUV;
-
-    // Pass world position (useful for lighting calculations)
-    vWorldPos = worldPos.xyz;
-}
-)vertex";
-
-// Fragment shader, you'd typically load this from assets
-static const char *fragment = R"fragment(#version 320 es
-
-precision highp float;
-
-// Input from vertex shader
-in vec3 vNormal;
-in vec2 vUV;
-in vec3 vWorldPos;
-
-// Uniforms for rendering mode
-uniform sampler2D uTexture;
-uniform bool useTextures;
-uniform bool useNormals;
-uniform vec3 matColor;
-
-// Output color
-out vec4 fragColor;
-
-void main() {
-    vec3 N = normalize(vNormal);
-    float intensity = 6.0f;
-    vec3 lDir = vec3(100.f, 100.f, 0.f) - vWorldPos;
-    float distanceL = length(lDir);
-    float lightIntensity = intensity / (distanceL * distanceL);
-    vec3 L = normalize(lDir);
-    fragColor = vec4(max(vec3(dot(N,L)), 0.3f) * matColor, 1.f);
-//    fragColor = vec4(N * 0.5f + 0.5f, 1.0f);
-}
-)fragment";
-
-
 Renderer::~Renderer() {
     if (display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -122,17 +57,12 @@ void Renderer::render() {
     // changed.
     updateRenderArea();
 
-    // send the matrix to the shader
-
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::lookAt(eye_, center_,
-                                 glm::vec3(0.f, 1.f, 0.f));
-
-    shader_->setUniformMatrix4(viewProjMatLocation_, glm::value_ptr(projectionMatrix_ * view));
-    shader_->setUniformMatrix4(modelMatLocation_, glm::value_ptr(model));
-    shader_->setUniform3f(colorLocation_, glm::value_ptr(glm::vec3(1.0f, 0.0f, 0.0f)));
-
-
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - startT_).count() / 1000.0f;
+    shader_->setUniform2f(u_resolutionL_, glm::value_ptr(glm::vec2(width_, height_)));
+    shader_->setUniformf(u_timeL_, time);
+    shader_->setUniform3f(u_cameraPosL_, glm::value_ptr(eye_));
+    shader_->setUniform3f(u_cameraLookAtL_, glm::value_ptr(center_));
 
     // clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -144,6 +74,8 @@ void Renderer::render() {
         for (const auto &model: models_) {
             shader_->drawModel(model);
         }
+    } else {
+        shader_->drawQuad(quad_);
     }
 
     // Present the rendered image. This is an implicit glFlush.
@@ -224,8 +156,9 @@ void Renderer::initRenderer() {
     PRINT_GL_STRING(GL_VERSION);
     PRINT_GL_STRING_AS_LIST(GL_EXTENSIONS);
 
-    shader_ = std::unique_ptr<Shader>(
-            Shader::loadShader(vertex, fragment));
+    std::string vertexSource = loadFile("passthrough.vert");
+    std::string fragmentSource = loadFile("raymarch.frag");
+    shader_ = std::unique_ptr<Shader>(Shader::loadShader(vertexSource, fragmentSource));
     assert(shader_);
 
     // Note: there's only one shader in this demo, so I'll activate it here. For a more complex game
@@ -243,13 +176,18 @@ void Renderer::initRenderer() {
     glCullFace(GL_BACK);
 
     // get some demo models into memory
-    createModels(12, 12, 1);
-//    createModels(3, 4, 0.5);
+//    createSphere(12, 12, 1);
+//    createSphere(3, 4, 0.5);
+    createRenderingQuad();
 
 
-    viewProjMatLocation_ = shader_->getUniformLocation("viewProjMat");
-    modelMatLocation_ = shader_->getUniformLocation("modelMat");
-    colorLocation_ = shader_->getUniformLocation("matColor");
+    // resolution, time, cameraPos, lookAt
+    u_resolutionL_ = shader_->getUniformLocation("u_resolution");
+    u_timeL_ = shader_->getUniformLocation("u_time");
+    u_cameraPosL_ = shader_->getUniformLocation("u_cameraPos");
+    u_cameraLookAtL_ = shader_->getUniformLocation("u_cameraLookAt");
+
+    startT_ = std::chrono::high_resolution_clock::now();
 }
 
 void Renderer::updateRenderArea() {
@@ -270,10 +208,45 @@ void Renderer::updateRenderArea() {
     }
 }
 
+void Renderer::createRenderingQuad() {
+    const float quadVertices[] = {
+            -1.0f, 1.0f,  // Top-left
+            -1.0f, -1.0f,  // Bottom-left
+            1.0f, 1.0f,  // Top-right
+            1.0f, -1.0f,  // Bottom-right
+    };
+    const unsigned short indices[] = {
+            0, 1, 2,
+            2, 1, 3
+    };
+    glGenVertexArrays(1, &quad_.VAO);
+    glGenBuffers(1, &quad_.VBO);
+    glGenBuffers(1, &quad_.EBO);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, quad_.VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_.EBO);
+    glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,              // Target buffer
+            sizeof(indices), // Total size of index data in bytes
+            &indices,                 // Pointer to the data on the CPU
+            GL_STATIC_DRAW                        // Hint that data will not change
+    );
+
+    glBindVertexArray(quad_.VAO);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 /**
  * @brief Create any demo models we want for this demo.
  */
-void Renderer::createModels(int rx, int ry, float r) {
+void Renderer::createSphere(int rx, int ry, float r) {
     int resolutionX = rx;
     int resolutionY = ry;
     float radius = r;
@@ -385,7 +358,7 @@ void Renderer::handleInput() {
         return;
     }
 
-    delta_ = glm::vec2(0.0f);
+    mouseDelta_ = glm::vec2(0.0f);
 
     // handle motion events (motionEventsCounts can be 0).
     for (auto i = 0; i < inputBuffer->motionEventsCount; i++) {
@@ -401,7 +374,7 @@ void Renderer::handleInput() {
         auto &pointer = motionEvent.pointers[pointerIndex];
         auto x = GameActivityPointerAxes_getX(&pointer);
         auto y = GameActivityPointerAxes_getY(&pointer);
-        delta_ = {x - lastPos_.x, y - lastPos_.y};
+        mouseDelta_ = {x - lastPos_.x, y - lastPos_.y};
         lastPos_ = {x, y};
 
         // determine the action type and process the event accordingly.
@@ -435,9 +408,9 @@ void Renderer::handleInput() {
 //
 //                    if (index != (motionEvent.pointerCount - 1)) aout << ",";
 //                    aout << " ";
-//                    delta_ = {x - lastPos_.x, y - lastPos_.y};
+//                    mouseDelta_ = {x - lastPos_.x, y - lastPos_.y};
 //                    lastPos_ = {x, y};
-//                    orbitCamera(delta_.x, delta_.y);
+//                    orbitCamera(mouseDelta_.x, mouseDelta_.y);
 //                }
 
                 pointer = motionEvent.pointers[0];
@@ -446,7 +419,7 @@ void Renderer::handleInput() {
                 aout << "(" << pointer.id << ", " << x << ", " << y << ")";
                 aout << " ";
 
-                orbitCamera(delta_.x, delta_.y);
+                orbitCamera(mouseDelta_.x, mouseDelta_.y);
 
                 aout << "Pointer Move";
                 break;
@@ -518,4 +491,22 @@ void Renderer::orbitCamera(float dx, float dy) {
     glm::vec3 newPosition = centerToEye + center_;
 
     eye_ = newPosition;
+}
+
+std::string Renderer::loadFile(const std::string &file) {
+    AAsset *asset = AAssetManager_open(app_->activity->assetManager, file.c_str(),
+                                       AASSET_MODE_BUFFER);
+    assert(asset);
+
+    size_t fileSize = AAsset_getLength(asset);
+    char *buffer = new char[fileSize + 1];
+    AAsset_read(asset, buffer, fileSize);
+    buffer[fileSize] = '\0';
+
+    std::string output(buffer);
+
+    delete[] buffer;
+    AAsset_close(asset);
+
+    return output;
 }
