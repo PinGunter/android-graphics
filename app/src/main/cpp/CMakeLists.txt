@@ -3,13 +3,13 @@
 
 cmake_minimum_required(VERSION 3.22.1)
 
-project("graphictests")
+project("sdfspeedometer")
 
 add_subdirectory(glm)
 
 # Creates your game shared library. The name must be the same as the
 # one used for loading in your Kotlin/Java or AndroidManifest.txt files.
-add_library(graphictests SHARED
+add_library(sdfspeedometer SHARED
         main.cpp
         AndroidOut.cpp
         Renderer.cpp
@@ -25,7 +25,7 @@ set(CMAKE_SHARED_LINKER_FLAGS
         "${CMAKE_SHARED_LINKER_FLAGS} -u Java_com_google_androidgamesdk_GameActivity_initializeNativeCode")
 
 # Configure libraries CMake uses to link your target library.
-target_link_libraries(graphictests
+target_link_libraries(sdfspeedometer
         # The game activity
         game-activity::game-activity_static
 

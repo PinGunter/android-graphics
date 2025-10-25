@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GraphicTests"
+rootProject.name = "sdfSpeedometer"
 include(":app")
  

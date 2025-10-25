@@ -8,7 +8,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.graphictests"
+        applicationId = "com.example.sdfspeedometer"
         minSdk = 33
         targetSdk = 36
         versionCode = 1
