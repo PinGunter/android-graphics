@@ -60,6 +60,8 @@ void Renderer::render() {
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - startT_).count() / 1000.0f;
 
+    shader_->activate();
+
     shader_->setUniform3f(locStartColor, glm::value_ptr(startColor));
     shader_->setUniform3f(locEndColor, glm::value_ptr(endColor));
     shader_->setUniformf(locProgress, progress);
@@ -74,9 +76,11 @@ void Renderer::render() {
     // configure it at the end of initRenderer
     if (!models_.empty()) {
         for (const auto &model: models_) {
-            shader_->drawModel(model);
+            model.draw();
         }
     }
+
+    shader_->deactivate();
 
     // Present the rendered image. This is an implicit glFlush.
     auto swapResult = eglSwapBuffers(display_, surface_);
@@ -220,41 +224,7 @@ void Renderer::createModel() {
             2, 3, 0
     };
 
-
-
-    // Member variables to store buffer IDs
-    GLuint vboId_ = 0;
-    GLuint iboId_ = 0;
-
-    // 1. Generate buffer objects
-    glGenBuffers(1, &vboId_);
-    glGenBuffers(1, &iboId_);
-
-    // 2. Upload vertex data to the VBO
-    glBindBuffer(GL_ARRAY_BUFFER, vboId_);
-    glBufferData(
-            GL_ARRAY_BUFFER,                      // Target buffer
-            vertices.size() * sizeof(Vertex), // Total size of data in bytes
-            vertices.data(),                // Pointer to the data on the CPU
-            GL_STATIC_DRAW                        // Hint that data will not change
-    );
-
-    // 3. Upload index data to the IBO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId_);
-    glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,              // Target buffer
-            indices.size() * sizeof(GLushort), // Total size of index data in bytes
-            indices.data(),                 // Pointer to the data on the CPU
-            GL_STATIC_DRAW                        // Hint that data will not change
-    );
-
-    // 4. Unbind buffers (good practice)
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
-    // Create a model and put it in the back of the render list.
-    models_.emplace_back(vertices, indices, vboId_, iboId_);
+    models_.emplace_back(std::make_shared<Model>(vertices, indices));
 }
 
 void Renderer::handleInput() {

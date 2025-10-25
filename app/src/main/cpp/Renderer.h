@@ -85,7 +85,7 @@ private:
     float progress{0.75f};
 
     std::unique_ptr<Shader> shader_;
-    std::vector<Model> models_;
+    std::vector<Drawable> models_;
 
     //input and delta
     glm::vec2 lastPos_{0.f, 0.f};

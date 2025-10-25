@@ -92,51 +92,6 @@ void Shader::deactivate() const {
     glUseProgram(0);
 }
 
-void Shader::drawModel(const Model &model) const {
-// In your main render loop...
-
-// Bind the buffers that contain your model's data
-    glBindBuffer(GL_ARRAY_BUFFER, model.getVBO());
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.getEBO());
-
-// The stride is the size of a single Vertex for all attributes
-    GLsizei stride = sizeof(Vertex);
-
-// Set up the attribute pointers.
-// The last parameter is now an OFFSET into the bound VBO, not a CPU pointer.
-    glVertexAttribPointer(
-            positionLocation_,
-            3, GL_FLOAT, GL_FALSE, stride,
-            (const void *) offsetof(Vertex, position)
-    );
-    glEnableVertexAttribArray(positionLocation_);
-
-    glVertexAttribPointer(
-            uvLocation_,
-            3, GL_FLOAT, GL_FALSE, stride,
-            (const void *) offsetof(Vertex, uv)
-    );
-    glEnableVertexAttribArray(uvLocation_);
-
-
-// Draw using the bound IBO.
-// The last parameter is now an offset into the IBO, so we pass nullptr (or 0)
-// to indicate drawing from the beginning of the buffer.
-    glDrawElements(
-            GL_TRIANGLES,
-            model.getIndexCount(),
-            GL_UNSIGNED_SHORT,
-            nullptr // Use the bound GL_ELEMENT_ARRAY_BUFFER
-    );
-
-// Unbind the VBO (optional but good practice)
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-// Disable attributes
-    glDisableVertexAttribArray(uvLocation_);
-    glDisableVertexAttribArray(positionLocation_);
-}
 
 void Shader::setUniformMatrix4(GLint location, const float *matrix) const {
     glUniformMatrix4fv(location, 1, false, matrix);

@@ -16,49 +16,81 @@ struct Vertex {
 
 typedef uint16_t Index;
 
-class Model {
-public:
-    inline Model(
-            std::vector<Vertex> vertices,
-            std::vector<Index> indices,
-            GLint VBO, GLint EBO
-    )
-            : vertices_(std::move(vertices)),
-              indices_(std::move(indices)),
-              vbo_(VBO), ebo_(EBO) {}
 
+struct Model {
     inline Model(
             std::vector<Vertex> vertices,
-            std::vector<Index> indices)
+            std::vector<Index> indices
+    )
             : vertices_(std::move(vertices)),
               indices_(std::move(indices)) {}
 
-    inline const Vertex *getVertexData() const {
-        return vertices_.data();
-    }
-
-    inline const size_t getIndexCount() const {
-        return indices_.size();
-    }
-
-    inline const Index *getIndexData() const {
-        return indices_.data();
-    }
-
-    inline const GLint getVBO() const {
-        return vbo_;
-    }
-
-    inline const GLint getEBO() const {
-        return ebo_;
-    }
-
-private:
     std::vector<Vertex> vertices_;
     std::vector<Index> indices_;
 
-    GLint vbo_{-1}, ebo_{-1};
-
 };
+
+class Drawable {
+private:
+    GLuint VAO{0}, VBO{0}, EBO{0};
+    std::shared_ptr<Model> model;
+public:
+    Drawable(std::shared_ptr<Model> m) : model(m) {
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(
+                GL_ARRAY_BUFFER,
+                model->vertices_.size() * sizeof(Vertex),
+                model->vertices_.data(),
+                GL_STATIC_DRAW
+        );
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(
+                GL_ELEMENT_ARRAY_BUFFER,
+                model->indices_.size() * sizeof(GLushort),
+                model->indices_.data(),
+                GL_STATIC_DRAW
+        );
+
+        GLsizei stride = sizeof(Vertex);
+
+        glVertexAttribPointer(
+                0,
+                3, GL_FLOAT, GL_FALSE, stride,
+                (const void *) offsetof(Vertex, position)
+        );
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(
+                1,
+                3, GL_FLOAT, GL_FALSE, stride,
+                (const void *) offsetof(Vertex, uv)
+        );
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    void draw() const {
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, model->indices_.size(), GL_UNSIGNED_SHORT, 0);
+        glBindVertexArray(0);
+    };
+
+    ~Drawable() {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+};
+
 
 #endif //ANDROIDGLINVESTIGATIONS_MODEL_H

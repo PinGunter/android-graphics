@@ -116,8 +116,10 @@ void main()
 
     float nMask = 1.0 - smoothstep(lineWidth, lineWidth + blurDistance, nD);
 
+    // gradient to black for the points that are closer to the center
+    float gradientMask = smoothstep(innerRadius * 0.9, outerRadius, d);
 
-    vec4 baseColor = (borderMask * lineColor) + (fillAreaMask * finalFillColor);
+    vec4 baseColor = (borderMask * lineColor) + (fillAreaMask * finalFillColor * gradientMask);
 
     vec4 finalColor = mix(baseColor, lineColor, nMask);
 

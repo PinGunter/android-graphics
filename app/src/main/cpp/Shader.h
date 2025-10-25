@@ -48,12 +48,6 @@ public:
     void deactivate() const;
 
     /*!
-     * Renders a single model
-     * @param model a model to render
-     */
-    void drawModel(const Model &model) const;
-
-    /*!
      * Sets the model/view/projection matrix in the shader.
      * @param projection Matrix sixteen floats, column major, defining an OpenGL projection matrix.
      */
