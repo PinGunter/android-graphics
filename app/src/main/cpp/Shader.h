@@ -53,8 +53,6 @@ public:
      */
     void drawModel(const Model &model) const;
 
-    void drawQuad(const Quad &quad) const;
-
     /*!
      * Sets the model/view/projection matrix in the shader.
      * @param projection Matrix sixteen floats, column major, defining an OpenGL projection matrix.
@@ -103,7 +101,7 @@ private:
 
     GLuint program_;
     GLint positionLocation_{0};
-    GLint normalLocation_{1};
+    GLint uvLocation_{1};
 };
 
 #endif //ANDROIDGLINVESTIGATIONS_SHADER_H

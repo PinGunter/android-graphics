@@ -49,7 +49,8 @@
                onmouseout="return searchBox.OnSearchSelectHide()"
                onmouseover="return searchBox.OnSearchSelectShow()"
                src="search/mag_sel.png"/>
-          <input accesskey="S" id="MSearchField" onblur="searchBox.OnSearchFieldFocus(false)" onfocus="searchBox.OnSearchFieldFocus(true)"
+          <input accesskey="S" id="MSearchField" onblur="searchBox.OnSearchFieldFocus(false)"
+                 onfocus="searchBox.OnSearchFieldFocus(true)"
                  onkeyup="searchBox.OnSearchFieldChange(event)"
                  type="text"
                  value="Search"/>
@@ -241,7 +242,7 @@
         </div>
         <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; vec&lt;2, T,
             Q&gt; <span class="keyword">const</span>&amp; center, vec&lt;2, T, Q&gt; <span
-                    class="keyword">const</span>&amp; mouseDelta_, vec&lt;4, U, Q&gt; <span
+                    class="keyword">const</span>&amp; pointerDelta_, vec&lt;4, U, Q&gt; <span
                     class="keyword">const</span>&amp; viewport);
         </div>
         <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;</div>
@@ -326,7 +327,8 @@
             <div class="ttname"><a href="a00245.html#gaf6b21eadb7ac2ecbbe258a9a233b4c82">glm::pickMatrix</a>
             </div>
             <div class="ttdeci">GLM_FUNC_DECL mat&lt; 4, 4, T, Q &gt; pickMatrix(vec&lt; 2, T, Q
-                &gt; const &amp;center, vec&lt; 2, T, Q &gt; const &amp;mouseDelta_, vec&lt; 4, U, Q
+                &gt; const &amp;center, vec&lt; 2, T, Q &gt; const &amp;pointerDelta_, vec&lt; 4, U,
+                Q
                 &gt; const &amp;viewport)
             </div>
             <div class="ttdoc">Define a picking region.</div>

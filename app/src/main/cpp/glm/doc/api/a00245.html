@@ -49,7 +49,8 @@
                onmouseout="return searchBox.OnSearchSelectHide()"
                onmouseover="return searchBox.OnSearchSelectShow()"
                src="search/mag_sel.png"/>
-          <input accesskey="S" id="MSearchField" onblur="searchBox.OnSearchFieldFocus(false)" onfocus="searchBox.OnSearchFieldFocus(true)"
+          <input accesskey="S" id="MSearchField" onblur="searchBox.OnSearchFieldFocus(false)"
+                 onfocus="searchBox.OnSearchFieldFocus(true)"
                  onkeyup="searchBox.OnSearchFieldChange(event)"
                  type="text"
                  value="Search"/>
@@ -105,7 +106,7 @@
             </td>
             <td class="memTemplItemRight" valign="bottom"><a class="el"
                                                              href="a00245.html#gaf6b21eadb7ac2ecbbe258a9a233b4c82">pickMatrix</a>
-                (vec&lt; 2, T, Q &gt; const &amp;center, vec&lt; 2, T, Q &gt; const &amp;mouseDelta_,
+                (vec&lt; 2, T, Q &gt; const &amp;center, vec&lt; 2, T, Q &gt; const &amp;pointerDelta_,
                 vec&lt; 4, U, Q &gt; const &amp;viewport)
             </td>
         </tr>
@@ -284,7 +285,7 @@
                     <td class="paramkey"></td>
                     <td></td>
                     <td class="paramtype">vec&lt; 2, T, Q &gt; const &amp;&#160;</td>
-                    <td class="paramname"><em>mouseDelta_</em>,</td>
+                    <td class="paramname"><em>pointerDelta_</em>,</td>
                 </tr>
                 <tr>
                     <td class="paramkey"></td>
@@ -312,7 +313,7 @@
                             <td>Specify the center of a picking region in window coordinates.</td>
                         </tr>
                         <tr>
-                            <td class="paramname">mouseDelta_</td>
+                            <td class="paramname">pointerDelta_</td>
                             <td>Specify the width and height, respectively, of the picking region in
                                 window coordinates.
                             </td>

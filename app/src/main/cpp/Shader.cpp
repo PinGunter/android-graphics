@@ -112,11 +112,11 @@ void Shader::drawModel(const Model &model) const {
     glEnableVertexAttribArray(positionLocation_);
 
     glVertexAttribPointer(
-            normalLocation_,
+            uvLocation_,
             3, GL_FLOAT, GL_FALSE, stride,
-            (const void *) offsetof(Vertex, normal)
+            (const void *) offsetof(Vertex, uv)
     );
-    glEnableVertexAttribArray(normalLocation_);
+    glEnableVertexAttribArray(uvLocation_);
 
 
 // Draw using the bound IBO.
@@ -134,16 +134,8 @@ void Shader::drawModel(const Model &model) const {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 // Disable attributes
-    glDisableVertexAttribArray(normalLocation_);
+    glDisableVertexAttribArray(uvLocation_);
     glDisableVertexAttribArray(positionLocation_);
-}
-
-void Shader::drawQuad(const Quad &quad) const {
-    glBindBuffer(GL_ARRAY_BUFFER, quad.VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.EBO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Shader::setUniformMatrix4(GLint location, const float *matrix) const {

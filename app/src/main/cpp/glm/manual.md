@@ -1904,8 +1904,8 @@ From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`
 [***gluPickMatrix:***](https://www.opengl.org/sdk/docs/man2/xhtml/gluPickMatrix.xml)
 
 ```cpp
-glm::mat4 pickMatrix(glm::vec2 const& center, glm::vec2 const& mouseDelta_, glm::ivec4 const& viewport);
-glm::dmat4 pickMatrix(glm::dvec2 const& center, glm::dvec2 const& mouseDelta_, glm::ivec4 const& viewport);
+glm::mat4 pickMatrix(glm::vec2 const& center, glm::vec2 const& pointerDelta_, glm::ivec4 const& viewport);
+glm::dmat4 pickMatrix(glm::dvec2 const& center, glm::dvec2 const& pointerDelta_, glm::ivec4 const& viewport);
 ```
 
 From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`

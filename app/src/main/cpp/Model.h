@@ -7,11 +7,11 @@
 
 
 struct Vertex {
-    constexpr Vertex(const glm::vec3 &inPosition, const glm::vec3 &inNormal) :
-            position(inPosition), normal(inNormal) {}
+    constexpr Vertex(const glm::vec3 &inPosition, const glm::vec2 &inUv) :
+            position(inPosition), uv(inUv) {}
 
     glm::vec3 position;
-    glm::vec3 normal;
+    glm::vec2 uv;
 };
 
 typedef uint16_t Index;
@@ -61,8 +61,4 @@ private:
 
 };
 
-
-struct Quad {
-    GLuint VAO{0}, VBO{0}, EBO{0};
-};
 #endif //ANDROIDGLINVESTIGATIONS_MODEL_H

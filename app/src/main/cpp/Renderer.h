@@ -52,9 +52,7 @@ private:
      */
     void updateRenderArea();
 
-    void createRenderingQuad();
-
-    void createSphere(int rx, int ry, float r);
+    void createModel();
 
     void orbitCamera(float dx, float dy);
 
@@ -76,18 +74,23 @@ private:
 
 
     // locations
-    GLint u_resolutionL_;
-    GLint u_timeL_;
-    GLint u_cameraPosL_;
-    GLint u_cameraLookAtL_;
+    GLint locStartColor;
+    GLint locEndColor;
+    GLint locProgress;
+    GLint locMVPMatrix;
+    GLint locResolution;
+
+    glm::vec3 startColor{0.0f, 1.0f, 0.0f};
+    glm::vec3 endColor{1.0f, 0.0f, 0.0f};
+    float progress{0.75f};
 
     std::unique_ptr<Shader> shader_;
     std::vector<Model> models_;
-    Quad quad_;
 
     //input and delta
     glm::vec2 lastPos_{0.f, 0.f};
-    glm::vec2 mouseDelta_{0.f, 0.f};
+    glm::vec2 pointerDelta_{0.f, 0.f};
+    glm::vec2 pointer_{0.0f, 0.0f};
 
     // timers
     std::chrono::time_point<std::chrono::high_resolution_clock> startT_;

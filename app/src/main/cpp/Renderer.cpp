@@ -59,10 +59,12 @@ void Renderer::render() {
 
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - startT_).count() / 1000.0f;
-    shader_->setUniform2f(u_resolutionL_, glm::value_ptr(glm::vec2(width_, height_)));
-    shader_->setUniformf(u_timeL_, time);
-    shader_->setUniform3f(u_cameraPosL_, glm::value_ptr(eye_));
-    shader_->setUniform3f(u_cameraLookAtL_, glm::value_ptr(center_));
+
+    shader_->setUniform3f(locStartColor, glm::value_ptr(startColor));
+    shader_->setUniform3f(locEndColor, glm::value_ptr(endColor));
+    shader_->setUniformf(locProgress, progress);
+    shader_->setUniformMatrix4(locMVPMatrix, glm::value_ptr(glm::mat4(1.0f)));
+    shader_->setUniform2f(locResolution, glm::value_ptr(glm::vec2(width_, height_)));
 
     // clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -74,8 +76,6 @@ void Renderer::render() {
         for (const auto &model: models_) {
             shader_->drawModel(model);
         }
-    } else {
-        shader_->drawQuad(quad_);
     }
 
     // Present the rendered image. This is an implicit glFlush.
@@ -156,8 +156,8 @@ void Renderer::initRenderer() {
     PRINT_GL_STRING(GL_VERSION);
     PRINT_GL_STRING_AS_LIST(GL_EXTENSIONS);
 
-    std::string vertexSource = loadFile("passthrough.vert");
-    std::string fragmentSource = loadFile("raymarch.frag");
+    std::string vertexSource = loadFile("vertex.glsl");
+    std::string fragmentSource = loadFile("fragment.glsl");
     shader_ = std::unique_ptr<Shader>(Shader::loadShader(vertexSource, fragmentSource));
     assert(shader_);
 
@@ -166,7 +166,7 @@ void Renderer::initRenderer() {
     shader_->activate();
 
     // setup any other gl related global states
-    glClearColor(1.f, 1.f, 1.f, 1.f);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
 
     // enable alpha globally for now, you probably don't want to do this in a game
     glEnable(GL_BLEND);
@@ -178,14 +178,14 @@ void Renderer::initRenderer() {
     // get some demo models into memory
 //    createSphere(12, 12, 1);
 //    createSphere(3, 4, 0.5);
-    createRenderingQuad();
-
+    createModel();
 
     // resolution, time, cameraPos, lookAt
-    u_resolutionL_ = shader_->getUniformLocation("u_resolution");
-    u_timeL_ = shader_->getUniformLocation("u_time");
-    u_cameraPosL_ = shader_->getUniformLocation("u_cameraPos");
-    u_cameraLookAtL_ = shader_->getUniformLocation("u_cameraLookAt");
+    locStartColor = shader_->getUniformLocation("uStartColor");
+    locEndColor = shader_->getUniformLocation("uEndColor");
+    locProgress = shader_->getUniformLocation("uProgress");
+    locMVPMatrix = shader_->getUniformLocation("uModelViewProjectionMatrix");
+    locResolution = shader_->getUniformLocation("iResolution");
 
     startT_ = std::chrono::high_resolution_clock::now();
 }
@@ -201,119 +201,26 @@ void Renderer::updateRenderArea() {
         width_ = width;
         height_ = height;
         glViewport(0, 0, width, height);
-
-        float aspectRatio = (float) width_ / (float) height_;
-        projectionMatrix_ = glm::perspective(glm::radians(width_ < height_ ? 90.0f : 45.f),
-                                             aspectRatio, 0.1f, 100.f);
     }
 }
 
-void Renderer::createRenderingQuad() {
-    const float quadVertices[] = {
-            -1.0f, 1.0f,  // Top-left
-            -1.0f, -1.0f,  // Bottom-left
-            1.0f, 1.0f,  // Top-right
-            1.0f, -1.0f,  // Bottom-right
-    };
-    const unsigned short indices[] = {
-            0, 1, 2,
-            2, 1, 3
-    };
-    glGenVertexArrays(1, &quad_.VAO);
-    glGenBuffers(1, &quad_.VBO);
-    glGenBuffers(1, &quad_.EBO);
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, quad_.VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_.EBO);
-    glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,              // Target buffer
-            sizeof(indices), // Total size of index data in bytes
-            &indices,                 // Pointer to the data on the CPU
-            GL_STATIC_DRAW                        // Hint that data will not change
-    );
-
-    glBindVertexArray(quad_.VAO);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
 
 /**
  * @brief Create any demo models we want for this demo.
  */
-void Renderer::createSphere(int rx, int ry, float r) {
-    int resolutionX = rx;
-    int resolutionY = ry;
-    float radius = r;
+void Renderer::createModel() {
+    std::vector<Vertex> vertices{
+            {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+            {{1.0f,  -1.0f, 0.0f}, {1.0f, 0.0f}},
+            {{1.0f,  1.0f,  0.0f}, {1.0f, 1.0f}},
+            {{-1.0f, 1.0f,  0.0f}, {0.0f, 1.0f}}
+    };
+    std::vector<uint16_t> indices{
+            0, 1, 2,
+            2, 3, 0
+    };
 
-    std::vector<Vertex> vertices{};
-    std::vector<uint16_t> indices{};
 
-    uint index = 0;
-    std::vector<std::vector<uint>> grid{};
-
-    glm::vec3 vertex{};
-
-    const float phiLength = glm::pi<float>() * 2.0f;
-    const float thetaLengt = glm::pi<float>();
-
-    resolutionX = glm::max<uint16_t>(3, resolutionX);
-    resolutionY = glm::max<uint16_t>(2, resolutionY);
-
-    for (int iy = 0; iy <= resolutionY; iy++) {
-        std::vector<uint> row{};
-
-        float v = (float) iy / resolutionY;
-
-        float uOffset = 0.0f;
-
-        if (iy == 0) {
-            uOffset = 0.5f / resolutionX;
-        } else if (iy == resolutionY) {
-            uOffset = -0.5 / resolutionX;
-        }
-
-        for (int ix = 0; ix <= resolutionX; ix++) {
-            float u = (float) ix / resolutionX;
-
-            vertex.x = -radius * cos(u * phiLength) * sin(v * thetaLengt);
-            vertex.y = radius * cos(v * thetaLengt);
-            vertex.z = radius * sin(u * phiLength) * sin(v * thetaLengt);
-
-            vertices.push_back(Vertex{vertex, glm::normalize(vertex)});
-
-            row.push_back(index++);
-        }
-        grid.push_back(row);
-    }
-
-    // indices
-    for (int iy = 0; iy < resolutionY; iy++) {
-        for (int ix = 0; ix < resolutionX; ix++) {
-            uint a, b, c, d;
-
-            a = grid[iy][ix + 1];
-            b = grid[iy][ix];
-            c = grid[iy + 1][ix];
-            d = grid[iy + 1][ix + 1];
-
-            if (iy != 0) {
-                indices.push_back(a);
-                indices.push_back(b);
-                indices.push_back(d);
-            }
-            if (iy != resolutionY - 1) {
-                indices.push_back(b);
-                indices.push_back(c);
-                indices.push_back(d);
-            }
-        }
-    }
 
     // Member variables to store buffer IDs
     GLuint vboId_ = 0;
@@ -358,7 +265,7 @@ void Renderer::handleInput() {
         return;
     }
 
-    mouseDelta_ = glm::vec2(0.0f);
+    pointerDelta_ = glm::vec2(0.0f);
 
     // handle motion events (motionEventsCounts can be 0).
     for (auto i = 0; i < inputBuffer->motionEventsCount; i++) {
@@ -374,7 +281,7 @@ void Renderer::handleInput() {
         auto &pointer = motionEvent.pointers[pointerIndex];
         auto x = GameActivityPointerAxes_getX(&pointer);
         auto y = GameActivityPointerAxes_getY(&pointer);
-        mouseDelta_ = {x - lastPos_.x, y - lastPos_.y};
+        pointerDelta_ = {x - lastPos_.x, y - lastPos_.y};
         lastPos_ = {x, y};
 
         // determine the action type and process the event accordingly.
@@ -408,18 +315,20 @@ void Renderer::handleInput() {
 //
 //                    if (index != (motionEvent.pointerCount - 1)) aout << ",";
 //                    aout << " ";
-//                    mouseDelta_ = {x - lastPos_.x, y - lastPos_.y};
+//                    pointerDelta_ = {x - lastPos_.x, y - lastPos_.y};
 //                    lastPos_ = {x, y};
-//                    orbitCamera(mouseDelta_.x, mouseDelta_.y);
+//                    orbitCamera(pointerDelta_.x, pointerDelta_.y);
 //                }
 
                 pointer = motionEvent.pointers[0];
                 x = GameActivityPointerAxes_getX(&pointer);
                 y = GameActivityPointerAxes_getY(&pointer);
+                pointer_ = {x, y};
+                progress = x / width_;
                 aout << "(" << pointer.id << ", " << x << ", " << y << ")";
                 aout << " ";
 
-                orbitCamera(mouseDelta_.x, mouseDelta_.y);
+                orbitCamera(pointerDelta_.x, pointerDelta_.y);
 
                 aout << "Pointer Move";
                 break;
