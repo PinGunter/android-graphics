@@ -185,7 +185,7 @@ void Renderer::initRenderer() {
     locEndColor = shader_->getUniformLocation("uEndColor");
     locProgress = shader_->getUniformLocation("uProgress");
     locMVPMatrix = shader_->getUniformLocation("uModelViewProjectionMatrix");
-    locResolution = shader_->getUniformLocation("iResolution");
+    locResolution = shader_->getUniformLocation("uResolution");
 
     startT_ = std::chrono::high_resolution_clock::now();
 }

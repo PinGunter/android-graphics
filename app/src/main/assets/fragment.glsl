@@ -4,12 +4,13 @@ precision highp float;
 uniform vec3 uStartColor;
 uniform vec3 uEndColor;
 uniform float uProgress;
-uniform vec2 iResolution;
+uniform vec2 uResolution;
 
 in vec2 vUv;
 
 out vec4 fragColor;
 
+// these numbers are for the aspect-ratio based data
 const float outerRadius = 0.8;
 const float innerRadius = 0.6;
 const vec2 center = vec2(0.0, -0.4);
@@ -63,11 +64,16 @@ vec4 addSegment(vec4 currentColorMix, vec4 lc, vec2 a, vec2 b, vec2 uv, float lw
 
 void main()
 {
-    // screen coordinates adjusted to aspect ratio an centered in the center
-    vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
+    // this would be based just on the uvs from the fragment shader without taking into consideration
+    // the resolution or aspect ratio. this approach stretches the image
+    //    vec2 uv = vUv - 0.5f;
 
-    float blurDistance = 3.0 / iResolution.y;
-    float lineWidth = 5.0 / iResolution.y;
+    // screen coordinates adjusted to aspect ratio an centered in the center
+    vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
+
+    // withouth the resolution uniform we should use smaller numbers
+    float blurDistance = 3.0 / uResolution.y;
+    float lineWidth = 5.0 / uResolution.y;
 
     // ======= SEMICIRCLE / DONUT =========
 
